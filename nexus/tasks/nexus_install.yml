@@ -1,0 +1,87 @@
+    - name: Check backupArtifact directory exists
+      stat:
+        path: "{{ nexus_dir }}"
+      register: folder_status     
+    
+    - name: Creating Backup Artifact Folder
+      file:
+        path: "/webapp/backupArtifact"
+        state: directory
+      when: folder_status.stat.exists == false
+
+    - name: Download nexus_package
+      get_url:
+        url: "{{ nexus_download_url }}"
+        dest: "{{ nexus_dir }}/latest-unix.tar.gz"
+        mode: '777'
+        
+
+    - name: Unpack Nexus download
+      unarchive:
+        src: "{{ nexus_dir }}/latest-unix.tar.gz"
+        dest: "{{ nexus_dir }}"
+        remote_src: yes
+    - name: Create systemd service configuration
+      template:
+        src: "nexus.service"
+        dest: "/etc/systemd/system"
+      become_user: root
+      become: yes
+
+    - name: Reload systemd service configuration
+      shell: 'systemctl daemon-reload'
+      become: yes
+
+    - name: Enable systemd service
+      shell: 'systemctl enable nexus.service'
+      become: yes
+
+    - name: Restart systemd service
+      shell: 'systemctl restart nexus.service'
+      become: yes
+
+    - name: pause for 1 min to start nexus
+      pause:
+        minutes: 1
+
+    - name: Check if admin.password file exists
+      stat:
+        path: "{{ nexus_dir }}/sonatype-work/nexus3/admin.password"
+      register: admin_password_file
+
+    - name: Slurp content of remote generated password file
+      slurp:
+        src: "{{ nexus_dir }}/sonatype-work/nexus3/admin.password"
+      register: _slurpedpass
+      when: admin_password_file.stat.exists == true
+
+    - name: Set default password from slurped content
+      set_fact:
+        nexus_default_admin_password: "{{ _slurpedpass.content | b64decode }}"
+      when: admin_password_file.stat.exists == true
+
+    - name: change admin password
+      uri:
+        url: "http://{{ nexus_server_ip }}:8081/service/rest/v1/security/users/admin/change-password"
+        user: 'admin'
+        password: "{{ nexus_default_admin_password }}"
+        method: PUT
+        headers:
+          Content-Type: text/plain
+        body: "{{ new_password }}"
+        force_basic_auth: yes
+        status_code: 204
+      when: admin_password_file.stat.exists == true
+
+    - name: enable anonymous user
+      uri:
+       url: "http://{{ nexus_server_ip }}:8081/service/rest/v1/security/anonymous"
+       user: 'admin'
+       password: "{{ new_password }}"
+       method: PUT
+       headers:
+        Content-Type: application/json
+       body: { "enabled": "true" }
+       body_format: json
+       force_basic_auth: yes
+      when: admin_password_file.stat.exists == true
