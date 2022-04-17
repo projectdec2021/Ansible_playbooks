@@ -1,18 +1,7 @@
-- hosts: 34.138.3.132
+- hosts: 34.121.46.70
   gather_facts: no
   remote_user: ubuntu
   become: true
-
-  vars:
-    - server_hostname: nginx-selfsigned
-    - key_size: 2048
-    - passphrase: # Set if you want passphrase
-    - key_type: RSA # Others include DSA, ECC, Ed25519, Ed448, X25519, X448
-    - country_name: IN
-    - state: TN
-    - state_or_province_name: TN
-    - email_address: admin@devops.edu
-    - organization_name: Devops
 
 
   tasks:
@@ -36,7 +25,7 @@
       openssl_csr:
         path: /root/CA.csr
         privatekey_path: "{{ ca_key.filename }}"
-        common_name: 34.138.3.132
+        common_name: 34.121.46.70
       register: ca_csr
 
     - name: sign the CA CSR
@@ -52,16 +41,16 @@
         path: /root/example_com_host_key.pem
       register: example_com_key
 
-    - name: create the CSR for the LDAP server
+    - name: create the CSR for Nginx host
       openssl_csr:
         path: /root/example_com.csr
         privatekey_path: "{{ example_com_key.filename }}"
-        common_name: 34.138.3.132
-        subject_alt_name: 'IP:34.138.3.132,DNS:www.example.com'
+        common_name: 34.121.46.70
+        subject_alt_name: 'IP:34.121.46.70,DNS:www.example.com'
       register: example_com_csr
 
 
-    - name: sign the CSR for the LDAP server
+    - name: sign the CSR for the Nginx host
       openssl_certificate:
         path: /root/example_com.crt
         csr_path: "{{ example_com_csr.filename }}"
