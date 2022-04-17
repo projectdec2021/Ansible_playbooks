@@ -1,0 +1,171 @@
+- hosts: 34.138.3.132
+  gather_facts: no
+  remote_user: ubuntu
+  become: true
+
+  vars:
+    - server_hostname: nginx-selfsigned
+    - key_size: 2048
+    - passphrase: # Set if you want passphrase
+    - key_type: RSA # Others include DSA, ECC, Ed25519, Ed448, X25519, X448
+    - country_name: IN
+    - state: TN
+    - state_or_province_name: TN
+    - email_address: admin@devops.edu
+    - organization_name: Devops
+
+
+  tasks:
+    - name: ensure nginx is at the latest version
+      apt:
+        name=nginx
+        state=latest
+        update_cache=yes
+
+    - name: start nginx
+      service:
+        name: nginx
+        state: started
+
+    - name: create CA key
+      openssl_privatekey:
+        path: /root/CA_key.pem
+      register: ca_key
+
+    - name: create the CA CSR
+      openssl_csr:
+        path: /root/CA.csr
+        privatekey_path: "{{ ca_key.filename }}"
+        common_name: 34.138.3.132
+      register: ca_csr
+
+    - name: sign the CA CSR
+      openssl_certificate:
+        path: /root/CA.crt
+        csr_path: "{{ ca_csr.filename }}"
+        privatekey_path: "{{ ca_key.filename }}"
+        provider: selfsigned
+      register: ca_crt
+
+    - name: create host CSR signing key
+      openssl_privatekey:
+        path: /root/example_com_host_key.pem
+      register: example_com_key
+
+    - name: create the CSR for the LDAP server
+      openssl_csr:
+        path: /root/example_com.csr
+        privatekey_path: "{{ example_com_key.filename }}"
+        common_name: 34.138.3.132
+        subject_alt_name: 'IP:34.138.3.132,DNS:www.example.com'
+      register: example_com_csr
+
+
+    - name: sign the CSR for the LDAP server
+      openssl_certificate:
+        path: /root/example_com.crt
+        csr_path: "{{ example_com_csr.filename }}"
+        provider: ownca
+        ownca_path: "{{ ca_crt.filename }}"
+        ownca_privatekey_path: "{{ ca_key.filename }}"
+      register: example_com_crt
+
+
+    - name: Creating a Configuration Snippet Pointing to the SSL Key and Certificate
+      blockinfile:
+        path: "/etc/nginx/snippets/self-signed.conf"
+        create: yes
+        block: |
+          ssl_certificate /root/example_com.crt;
+          ssl_certificate_key /root/example_com_host_key.pem;
+
+
+    - name: Creating a Configuration Snippet with Strong Encryption Settings
+      blockinfile:
+        path: "/etc/nginx/snippets/ssl-params.conf"
+        create: yes
+        block: |
+          ssl_protocols TLSv1.3;
+          ssl_prefer_server_ciphers on;
+          ssl_ciphers EECDH+AESGCM:EDH+AESGCM;
+          ssl_ecdh_curve secp384r1;
+          ssl_session_timeout  10m;
+          ssl_session_cache shared:SSL:10m;
+          ssl_session_tickets off;
+          ssl_stapling on;
+          ssl_stapling_verify on;
+          resolver 8.8.8.8 8.8.4.4 valid=300s;
+          resolver_timeout 5s;
+          # Disable strict transport security for now. You can uncomment the following
+          # line if you understand the implications.
+          #add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
+          add_header X-Frame-Options DENY;
+          add_header X-Content-Type-Options nosniff;
+          add_header X-XSS-Protection "1; mode=block";
+
+    - name: ensure file exists
+      file:
+        path: /etc/nginx/sites-available/nexus
+        state: touch
+
+    - name: Creating a file with content
+      blockinfile:
+        path: "/etc/nginx/sites-available/nexus"
+        block: |
+          server {
+            listen 443 ssl;
+            listen [::]:443 ssl;
+
+            include snippets/self-signed.conf;
+            include snippets/ssl-params.conf;
+            server_name  nginx-revprxy-4-nexus.com;
+            access_log /var/log/nginx/nexus.access.log;
+            error_log /var/log/nginx/nexus.error.log;
+
+            location / {
+              proxy_pass http://10.128.0.18:8081;
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_buffering    off;
+              proxy_request_buffering off;
+              keepalive_timeout  5 5;
+              tcp_nodelay        on;
+              proxy_connect_timeout 90;
+              proxy_send_timeout 120;
+              proxy_read_timeout 300;
+              client_max_body_size 10m;
+              }
+              }
+
+             server {
+                listen 80;
+                listen [::]:80;
+
+                server_name nginx-revprxy-4-nexus.com;
+                return 302 https://$server_name$request_uri;
+                }
+    - name: Remove symlink
+      file:
+        path: "/etc/nginx/sites-enabled/default"
+        state: absent
+
+    - name: Remove file nginx default config file
+      ansible.builtin.file:
+        path: /etc/nginx/sites-available/default
+        state: absent
+
+    - name: Create a symbolic link
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/nexus
+        dest: /etc/nginx/sites-enabled/nexus
+        state: link
+      notify:
+        - Restart nginx service
+
+  handlers:
+    - name: Restart nginx service
+      ansible.builtin.service:
+        name: nginx
+        state: restarted
+
