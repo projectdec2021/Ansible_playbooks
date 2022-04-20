@@ -5,7 +5,7 @@
     
     - name: Creating Backup Artifact Folder
       file:
-        path: "/webapp/backupArtifact"
+        path: "{{ nexus_dir }}"
         state: directory
       when: folder_status.stat.exists == false
 
