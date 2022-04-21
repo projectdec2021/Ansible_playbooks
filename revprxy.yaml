@@ -4,7 +4,7 @@
   become: true
 
   vars:
-
+    
   - CA_PRVKEY_FILE: /root/CA_key.pem
   - CA_CSR_FILE: /root/CA.csr
   - CA_CERT_FILE: /root/CA.crt
@@ -57,7 +57,7 @@
       openssl_csr:
         path: "{{ APP_CSR_FILE }}"
         privatekey_path: "{{ example_com_key.filename }}"
-        common_name:
+        common_name: 
         subject_alt_name: "{{ SUBJ_ALT }}"
       register: example_com_csr
 
@@ -112,3 +112,4 @@
       service:
         name: nginx
         state: restarted
+

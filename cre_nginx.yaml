@@ -1,0 +1,24 @@
+- hosts: nginx
+  gather_facts: no
+  remote_user: ubuntu
+  become: true
+  
+  vars_files:
+    - my_vault.yml
+
+
+  tasks:
+    - name: Create group "nginx"
+      group:
+        name: nginx
+        state: present
+
+    - name: Create user "nginx"
+      user:
+        name: nginx
+        password: "{{ my_password | password_hash('sha512') }}"
+        groups: 
+        - nginx
+        - sudo
+        state: present
+
