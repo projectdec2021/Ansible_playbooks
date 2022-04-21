@@ -10,10 +10,10 @@ To create repos in nexus:
     
        ---
        nexus_url: 34.121.46.70
-       create_docker_hosted: 'yes'
+       create_docker_hosted: 'no'
        docker_hosted_repo_name: myapp_docker_hosted
 
-       create_maven_hosted: 'yes'
+       create_maven_hosted: 'no'
        maven_hosted_repo_name: myapp_maven_hosted
        maven_hosted_versionType: RELEASE
 
