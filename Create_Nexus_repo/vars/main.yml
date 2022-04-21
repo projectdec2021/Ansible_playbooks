@@ -1,11 +1,15 @@
 ---
 nexus_url: 34.121.46.70
+create_docker_hosted: 'yes'
 docker_hosted_repo_name: myapp_docker_hosted1
+
+create_maven_hosted: 'yes'
 maven_hosted_repo_name: myapp_maven_hosted1
 maven_hosted_versionType: RELEASE
+
+create_maven_proxy: 'yes'
 maven_proxy_repo_name: myapp_maven_proxy1
 maven_proxy_remote_url: https://repo1.maven.org/maven2/
-create_docker_hosted: 'yes'
-create_maven_hosted: 'yes'
-create_maven_proxy: 'yes'
+
+
 # vars file for Create_Nexus_repo
