@@ -84,11 +84,6 @@
         dest: /etc/nginx/snippets/ssl-params.conf
 
 
-    - name: ensure file exists
-      file:
-        path: /etc/nginx/sites-available/nexus
-        state: touch
-
     - name: Creating a file with content
       template:
         src: nexus.jinja2
