@@ -1,15 +1,27 @@
-- hosts: 34.121.46.70
+- hosts: nginx-tmp
   gather_facts: no
-  remote_user: ubuntu
+  remote_user: nginx
   become: true
 
+  vars:
+
+  - CA_PRVKEY_FILE: /root/CA_key.pem
+  - CA_CSR_FILE: /root/CA.csr
+  - CA_CERT_FILE: /root/CA.crt
+  - APP_PRVKEY_FILE: /root/app_key.pem
+  - APP_CSR_FILE: /root/app.csr
+  - APP_CERT_FILE: /root/app.crt
+  - HOST_IP: "34.148.84.22"
+  - DNS_NAME: mydom.in
+  - SUBJ_ALT: 'IP:34.148.84.22,DNS:mydom.in'
+  - NEXUS_URL: http://10.128.0.18:8081
 
   tasks:
     - name: ensure nginx is at the latest version
       apt:
-        name=nginx
-        state=latest
-        update_cache=yes
+        name: nginx
+        state: latest
+        update_cache: yes
 
     - name: start nginx
       service:
@@ -18,41 +30,41 @@
 
     - name: create CA key
       openssl_privatekey:
-        path: /root/CA_key.pem
+        path: "{{ CA_PRVKEY_FILE }}"
       register: ca_key
 
     - name: create the CA CSR
       openssl_csr:
-        path: /root/CA.csr
+        path: "{{ CA_CSR_FILE }}"
         privatekey_path: "{{ ca_key.filename }}"
-        common_name: 34.121.46.70
+        common_name: "{{ HOST_IP }}"
       register: ca_csr
 
     - name: sign the CA CSR
       openssl_certificate:
-        path: /root/CA.crt
+        path: "{{ CA_CERT_FILE }}"
         csr_path: "{{ ca_csr.filename }}"
         privatekey_path: "{{ ca_key.filename }}"
         provider: selfsigned
       register: ca_crt
 
-    - name: create host CSR signing key
+    - name: create Nginx CSR signing key
       openssl_privatekey:
-        path: /root/example_com_host_key.pem
+        path: "{{ APP_PRVKEY_FILE }}"
       register: example_com_key
 
     - name: create the CSR for Nginx host
       openssl_csr:
-        path: /root/example_com.csr
+        path: "{{ APP_CSR_FILE }}"
         privatekey_path: "{{ example_com_key.filename }}"
-        common_name: 34.121.46.70
-        subject_alt_name: 'IP:34.121.46.70,DNS:www.example.com'
+        common_name:
+        subject_alt_name: "{{ SUBJ_ALT }}"
       register: example_com_csr
 
 
     - name: sign the CSR for the Nginx host
       openssl_certificate:
-        path: /root/example_com.crt
+        path: "{{ APP_CERT_FILE }}"
         csr_path: "{{ example_com_csr.filename }}"
         provider: ownca
         ownca_path: "{{ ca_crt.filename }}"
@@ -60,37 +72,17 @@
       register: example_com_crt
 
 
-    - name: Creating a Configuration Snippet Pointing to the SSL Key and Certificate
-      blockinfile:
-        path: "/etc/nginx/snippets/self-signed.conf"
-        create: yes
-        block: |
-          ssl_certificate /root/example_com.crt;
-          ssl_certificate_key /root/example_com_host_key.pem;
+    - name: Copy Configuration Snippet Pointing to the SSL Key and Certificate
+      template:
+        src: self-signed.conf.jinja2
+        dest: /etc/nginx/snippets/self-signed.conf
 
 
     - name: Creating a Configuration Snippet with Strong Encryption Settings
-      blockinfile:
-        path: "/etc/nginx/snippets/ssl-params.conf"
-        create: yes
-        block: |
-          ssl_protocols TLSv1.3;
-          ssl_prefer_server_ciphers on;
-          ssl_ciphers EECDH+AESGCM:EDH+AESGCM;
-          ssl_ecdh_curve secp384r1;
-          ssl_session_timeout  10m;
-          ssl_session_cache shared:SSL:10m;
-          ssl_session_tickets off;
-          ssl_stapling on;
-          ssl_stapling_verify on;
-          resolver 8.8.8.8 8.8.4.4 valid=300s;
-          resolver_timeout 5s;
-          # Disable strict transport security for now. You can uncomment the following
-          # line if you understand the implications.
-          #add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
-          add_header X-Frame-Options DENY;
-          add_header X-Content-Type-Options nosniff;
-          add_header X-XSS-Protection "1; mode=block";
+      template:
+        src: ssl-params.conf.jinja2
+        dest: /etc/nginx/snippets/ssl-params.conf
+
 
     - name: ensure file exists
       file:
@@ -98,54 +90,22 @@
         state: touch
 
     - name: Creating a file with content
-      blockinfile:
-        path: "/etc/nginx/sites-available/nexus"
-        block: |
-          server {
-            listen 443 ssl;
-            listen [::]:443 ssl;
+      template:
+        src: nexus.jinja2
+        dest: /etc/nginx/sites-available/nexus
 
-            include snippets/self-signed.conf;
-            include snippets/ssl-params.conf;
-            server_name  nginx-revprxy-4-nexus.com;
-            access_log /var/log/nginx/nexus.access.log;
-            error_log /var/log/nginx/nexus.error.log;
-
-            location / {
-              proxy_pass http://10.128.0.18:8081;
-              proxy_set_header Host $host;
-              proxy_set_header X-Real-IP $remote_addr;
-              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-              proxy_buffering    off;
-              proxy_request_buffering off;
-              keepalive_timeout  5 5;
-              tcp_nodelay        on;
-              proxy_connect_timeout 90;
-              proxy_send_timeout 120;
-              proxy_read_timeout 300;
-              client_max_body_size 10m;
-              }
-              }
-
-             server {
-                listen 80;
-                listen [::]:80;
-
-                server_name nginx-revprxy-4-nexus.com;
-                return 302 https://$server_name$request_uri;
-                }
     - name: Remove symlink
       file:
         path: "/etc/nginx/sites-enabled/default"
         state: absent
 
     - name: Remove file nginx default config file
-      ansible.builtin.file:
+      file:
         path: /etc/nginx/sites-available/default
         state: absent
 
     - name: Create a symbolic link
-      ansible.builtin.file:
+      file:
         src: /etc/nginx/sites-available/nexus
         dest: /etc/nginx/sites-enabled/nexus
         state: link
@@ -154,7 +114,6 @@
 
   handlers:
     - name: Restart nginx service
-      ansible.builtin.service:
+      service:
         name: nginx
         state: restarted
-
