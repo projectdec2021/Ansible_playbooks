@@ -1,0 +1,6 @@
+---
+- hosts: nexus_server
+  vars: 
+    ansible_become_pass: admin
+  roles:
+    - role: nexus

@@ -1,0 +1,4 @@
+---
+- hosts: nginx_nexus
+  roles:
+    - role: Create_Nexus_repo

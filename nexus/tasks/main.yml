@@ -1,0 +1,4 @@
+---
+#- import_tasks: java_install.yml
+- import_tasks: nexus_install.yml
+# tasks file for nexus
