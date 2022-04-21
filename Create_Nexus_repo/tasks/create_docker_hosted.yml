@@ -1,0 +1,39 @@
+---
+  - name: create docker hosted repo
+    uri:
+     url: "https://{{ nexus_url }}/service/rest/v1/repositories/docker/hosted"
+     user: 'admin'
+     password: priya
+     validate_certs: no
+     method: POST
+     headers:
+       Content-Type: application/json
+     body: {
+       "name": "{{ docker_hosted_repo_name }}",
+       "online": true,
+       "storage": {
+         "blobStoreName": "default",
+         "strictContentTypeValidation": true,
+         "writePolicy": "allow_once"
+       },
+       "cleanup": {
+         "policyNames": [
+           "string"
+         ]
+       },
+       "component": {
+         "proprietaryComponents": true
+       },
+       "docker": {
+         "v1Enabled": false,
+         "forceBasicAuth": true,
+         "httpPort": 8082,
+         "httpsPort": 8083
+       }
+     }
+     body_format: json
+     force_basic_auth: yes
+     status_code: 201
+    when: create_docker_hosted == 'yes'
+ 
+ 

@@ -1,0 +1,38 @@
+---
+  - name: create maven hosted repo
+    uri:
+     url: "https://{{ nexus_url }}/service/rest/v1/repositories/maven/hosted"
+     user: 'admin'
+     password: priya
+     validate_certs: no
+     method: POST
+     headers:
+       Content-Type: application/json
+     body: {
+       "name": "{{ maven_hosted_repo_name }}_{{ maven_hosted_versionType }}",
+       "online": true,
+       "storage": {
+         "blobStoreName": "default",
+         "strictContentTypeValidation": true,
+         "writePolicy": "allow_once"
+       },
+       "cleanup": {
+         "policyNames": [
+           "string"
+         ]
+       },
+       "component": {
+         "proprietaryComponents": true
+       },
+       "maven": {
+         "versionPolicy": "{{ maven_hosted_versionType }}",
+         "layoutPolicy": "STRICT",
+         "contentDisposition": "ATTACHMENT"
+       }
+     }
+     body_format: json
+     force_basic_auth: yes
+     status_code: 201
+    when: create_maven_hosted == 'yes'
+ 
+ 

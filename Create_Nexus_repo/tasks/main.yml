@@ -1,0 +1,6 @@
+---
+- import_tasks: create_maven_hosted_repo.yml
+- import_tasks: create_maven_proxy_repo.yml
+- import_tasks: create_docker_hosted.yml
+
+# tasks file for Create_Nexus_repo

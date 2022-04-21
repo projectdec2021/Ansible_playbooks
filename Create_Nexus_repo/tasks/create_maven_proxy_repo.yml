@@ -1,0 +1,66 @@
+---    
+  - name:  maven proxy repo
+    uri:
+      url: "https://{{ nexus_url }}/service/rest/v1/repositories/maven/proxy"
+      user: admin
+      password: priya
+      validate_certs: no
+      method: POST
+      headers:
+        Content-Type: application/json
+      body: {
+        "name": "{{ maven_proxy_repo_name }}",
+        "online": true,
+        "storage": {
+          "blobStoreName": "default",
+          "strictContentTypeValidation": true
+         },
+        "cleanup": {
+          "policyNames": [
+             "string"
+          ]
+         },
+        "proxy": {
+           "remoteUrl": "{{ maven_proxy_remote_url }}",
+           "contentMaxAge": 1440,
+           "metadataMaxAge": 1440
+        },
+        "negativeCache": {
+           "enabled": true,
+           "timeToLive": 1440
+        },
+        "httpClient": {
+          "blocked": false,
+          "autoBlock": true,
+          "connection": {
+            "retries": 0,
+            "userAgentSuffix": "string",
+            "timeout": 60,
+            "enableCircularRedirects": false,
+            "enableCookies": false,
+            "useTrustStore": false
+          },
+          "authentication": {
+            "type": "username",
+            "username": "admin",
+            "password": "admin",
+            "ntlmHost": "string",
+            "ntlmDomain": "string",
+            "preemptive": false
+          }
+        },
+        "routingRule": "string",
+        "maven": {
+          "versionPolicy": "RELEASE",
+          "layoutPolicy": "STRICT",
+          "contentDisposition": "INLINE"
+        }
+      }
+      body_format: json
+      force_basic_auth: 'yes'
+      status_code: 201
+    when: create_maven_proxy == 'yes'
+
+            
+
+        

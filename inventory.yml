@@ -1,2 +1,4 @@
 [nexus_server]
 34.123.62.189 ansible_connection=ssh ansible_user=projectdec2021 ansible_ssh_pass=admin 
+[nginx_nexus]
+34.121.46.70 ansible_connection=ssh ansible_user=ubuntu
