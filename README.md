@@ -13,11 +13,11 @@ To create repos in nexus:
        create_docker_hosted: 'no'
        docker_hosted_repo_name: myapp_docker_hosted
 
-       create_maven_hosted: 'no'
+       create_maven_hosted: 'yes'
        maven_hosted_repo_name: myapp_maven_hosted
        maven_hosted_versionType: RELEASE
 
-       create_maven_proxy: 'yes'
+       create_maven_proxy: 'no'
        maven_proxy_repo_name: myapp_maven_proxy
        maven_proxy_remote_url: https://repo1.maven.org/maven2/
    
