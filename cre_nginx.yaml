@@ -8,7 +8,7 @@
 
   vars:
     pubkey_path: /home/nginx/.ssh
-    pubkey_file: /home/nginx/.ssh/authorized_keys
+    client_pubkey: /home/User/.ssh/id_rsa.pub
 
 
   tasks:
@@ -38,5 +38,5 @@
       authorized_key:
         user: nginx
         state: present
-        key: "{{ lookup('file','/home/User/.ssh/id_rsa.pub' ) }}"
+        key: "{{ lookup('file','{{ client_pubkey }}' ) }}"
 
