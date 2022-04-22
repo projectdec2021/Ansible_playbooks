@@ -1,4 +1,4 @@
-- hosts: nginx-tmp
+- hosts: nginx
   gather_facts: no
   remote_user: nginx
   become: true
@@ -17,6 +17,7 @@
   - NEXUS_URL: http://10.128.0.18:8081
 
   tasks:
+
     - name: ensure nginx is at the latest version
       apt:
         name: nginx
@@ -27,6 +28,7 @@
       service:
         name: nginx
         state: started
+
 
     - name: create CA key
       openssl_privatekey:

@@ -6,8 +6,13 @@
   vars_files:
     - my_vault.yml
 
+  vars:
+    pubkey_path: /home/nginx/.ssh
+    pubkey_file: /home/nginx/.ssh/authorized_keys
+
 
   tasks:
+
     - name: Create group "nginx"
       group:
         name: nginx
@@ -17,8 +22,21 @@
       user:
         name: nginx
         password: "{{ my_password | password_hash('sha512') }}"
-        groups: 
+        groups:
         - nginx
         - sudo
         state: present
+
+
+    - name: create .ssh directory on host
+      file:
+        path: "{{pubkey_path}}"
+        state: directory
+
+
+    - name: Set authorized key took from file
+      authorized_key:
+        user: nginx
+        state: present
+        key: "{{ lookup('file','/home/User/.ssh/id_rsa.pub' ) }}"
 

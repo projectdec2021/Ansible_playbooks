@@ -1,0 +1,21 @@
+$ ansible-playbook -v cre_nginx.yaml --ask-vault-pass
+Using /etc/ansible/ansible.cfg as config file
+Vault password:
+
+PLAY [nginx] **************************************************************************************************************************
+
+TASK [Create group "nginx"] ***********************************************************************************************************
+changed: [nginx-tmp] => {"ansible_facts": {"discovered_interpreter_python": "/usr/bin/python3"}, "changed": true, "gid": 1005, "name": "nginx", "state": "present", "system": false}
+
+TASK [Create user "nginx"] ************************************************************************************************************
+changed: [nginx-tmp] => {"changed": true, "comment": "", "create_home": true, "group": 100, "groups": "nginx,sudo", "home": "/home/nginx", "name": "nginx", "password": "NOT_LOGGING_PASSWORD", "shell": "/bin/sh", "state": "present", "stderr": "useradd: warning: the home directory /home/nginx already exists.\nuseradd: Not copying any file from skel directory into it.\n", "stderr_lines": ["useradd: warning: the home directory /home/nginx already exists.", "useradd: Not copying any file from skel directory into it."], "system": false, "uid": 1004}
+
+TASK [create .ssh directory on host] **************************************************************************************************
+ok: [nginx-tmp] => {"changed": false, "gid": 100, "group": "users", "mode": "0700", "owner": "nginx", "path": "/home/nginx/.ssh", "size": 4096, "state": "directory", "uid": 1004}
+
+TASK [Set authorized key took from file] **********************************************************************************************
+ok: [nginx-tmp] => {"changed": false, "comment": null, "exclusive": false, "follow": false, "key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDii9pkwwXK2/IAfK/YvfQ8ZtjGr1mLZC/0c8+W1hJn/SYVJ8JIeakFIGI2LpklrNSyWqFPEUiwdkPQy4sDMpXXmNVPe9cwd4axzRLFB+tMGrzo5V4qIDBfWgF8GazdJjlJLra/FGC7fu7zm595YdDhNh8QFzdmQ+efCoi08irzhSagIcYuMl+8vcRviLumWcko1qpfRAKAdBH75qvG/tF/JTcnIu29eONM0Wyu1/58ORrVIXffZbW6vK3SVH9yxuaUkCjQFt5D82Wk3EkrI9eR9R88qfaxdPTL7Ny63BuloObMgJGG5wQPhN+TOaswjyMpfRdJquXcx200HLJstO7lKefPE0RFJIFHof8RiHp943o6/ZVhfCsqin4m1VviroHPF2JifIXJrpz70wrnQ1zQpF3lEwZ9MY+e/u/fVCRkw0oEZ/Sh2AzmW0W7qEitiQ/pXqraa9FRdNR+5/X7LpXUwgCzkirOnSZs39kTRN/Bk8fdS4bRZivceiQQxOyca1c= User@Lenovo-PC", "key_options": null, "keyfile": "/home/nginx/.ssh/authorized_keys", "manage_dir": true, "path": null, "state": "present", "user": "nginx", "validate_certs": true}
+
+PLAY RECAP ****************************************************************************************************************************
+nginx-tmp                  : ok=4    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
