@@ -22,13 +22,13 @@ Edit the variable "client_pubkey" to pass the value of the path of public key on
 
 Note:
 Customise the following variables as required:
-  - CA_PRVKEY_FILE          ## Path of Private Key file of CA 
-  - CA_CSR_FILE             ## Path of Certificate Service Request file 
-  - CA_CERT_FILE            ## Path of CA Certificate
-  - APP_PRVKEY_FILE         ## Path of Private key file to Application/Nginx
-  - APP_CSR_FILE            ## Path of Certificate Service Request file for application
-  - APP_CERT_FILE           ## Path of Application Certificate 
-  - HOST_IP                 ## IP address of Nginx host
-  - DNS_NAME                ## Domain Name for which the certificate is to be produced
-  - SUBJ_ALT                ## Subject Alternative - provide IP address & DNS name
-  - NEXUS_URL               ## URL to be redirected to
+  - CA_PRVKEY_FILE          = Path of Private Key file of CA 
+  - CA_CSR_FILE             = Path of Certificate Service Request file 
+  - CA_CERT_FILE            = Path of CA Certificate
+  - APP_PRVKEY_FILE         = Path of Private key file to Application/Nginx
+  - APP_CSR_FILE            = Path of Certificate Service Request file for application
+  - APP_CERT_FILE           = Path of Application Certificate 
+  - HOST_IP                 = IP address of Nginx host
+  - DNS_NAME                = Domain Name for which the certificate is to be produced
+  - SUBJ_ALT                = Subject Alternative - provide IP address & DNS name
+  - NEXUS_URL               = URL to be redirected to
