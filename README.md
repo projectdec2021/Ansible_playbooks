@@ -17,7 +17,7 @@ Edit the variable "client_pubkey" to pass the value of the path of public key on
 * Install Nginx, Configure TLS certificate &  Redirect to Nexus url:
 
    ```
-   ansible-playbook -v revprxy.yaml
+    ansible-playbook -vv revprxy.yaml --ask-become-pass
    ```
 
 Note:
