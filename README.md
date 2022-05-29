@@ -20,6 +20,7 @@ Edit the variable "client_pubkey" to pass the value of the path of public key on
     ansible-playbook -vv revprxy.yaml --ask-become-pass
    ```
 
+Prompts for the BECOME_USER password which is "nginx" user's password set above.
 Note:
 Customise the following variables as required:
   - CA_PRVKEY_FILE          = Path of Private Key file of CA 
