@@ -1,0 +1,106 @@
+- hosts: nginx
+  gather_facts: no
+  remote_user: ubuntu
+  become: true
+
+  vars:
+    
+  - CA_PRVKEY_FILE: /root/CA_key.pem
+  - CA_CSR_FILE: /root/CA.csr
+  - CA_CERT_FILE: /root/CA.crt
+  - APP_PRVKEY_FILE: /root/app_key.pem
+  - APP_CSR_FILE: /root/app.csr
+  - APP_CERT_FILE: /root/app.crt
+  - HOST_IP: "34.67.194.116"
+  - DNS_NAME: mydom.in
+  - SUBJ_ALT: 'IP:34.67.194.116,DNS:mydom.in'
+  - NEXUS_URL: http://10.128.0.18:8081
+  - NEXUS_DOCKER: http://10.128.0.18:8082
+  - BECOME_USER: nginx
+
+  tasks:
+    - name: ensure nginx is at the latest version
+      apt:
+        name: nginx
+        state: latest
+        update_cache: yes
+
+    - name: start nginx
+      service:
+        name: nginx
+        state: started
+
+    - name: create CA key
+      openssl_privatekey:
+        path: "{{ CA_PRVKEY_FILE }}"
+      register: ca_key
+
+    - name: create the CA CSR
+      openssl_csr:
+        path: "{{ CA_CSR_FILE }}"
+        privatekey_path: "{{ ca_key.filename }}"
+        common_name: "{{ HOST_IP }}"
+      register: ca_csr
+
+    - name: sign the CA CSR
+      openssl_certificate:
+        path: "{{ CA_CERT_FILE }}"
+        csr_path: "{{ ca_csr.filename }}"
+        privatekey_path: "{{ ca_key.filename }}"
+        provider: selfsigned
+      register: ca_crt
+
+    - name: create Nginx CSR signing key
+      openssl_privatekey:
+        path: "{{ APP_PRVKEY_FILE }}"
+      register: example_com_key
+
+    - name: create the CSR for Nginx host
+      openssl_csr:
+        path: "{{ APP_CSR_FILE }}"
+        privatekey_path: "{{ example_com_key.filename }}"
+        common_name: 
+        subject_alt_name: "{{ SUBJ_ALT }}"
+      register: example_com_csr
+
+
+    - name: sign the CSR for the Nginx host
+      openssl_certificate:
+        path: "{{ APP_CERT_FILE }}"
+        csr_path: "{{ example_com_csr.filename }}"
+        provider: ownca
+        ownca_path: "{{ ca_crt.filename }}"
+        ownca_privatekey_path: "{{ ca_key.filename }}"
+      register: example_com_crt
+
+
+
+    - name: Creating a file with content
+      template:
+        src: nexus.jinja2
+        dest: /etc/nginx/sites-available/nexus
+
+    - name: Remove symlink
+      file:
+        path: "/etc/nginx/sites-enabled/default"
+        state: absent
+
+    - name: Remove file nginx default config file
+      file:
+        path: /etc/nginx/sites-available/default
+        state: absent
+
+    - name: Create a symbolic link
+      file:
+        src: /etc/nginx/sites-available/nexus
+        dest: /etc/nginx/sites-enabled/nexus
+        state: link
+      notify:
+        - Restart nginx service
+
+  handlers:
+    - name: Restart nginx service
+      service:
+        name: nginx
+        state: restarted
+

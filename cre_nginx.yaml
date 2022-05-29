@@ -1,0 +1,42 @@
+- hosts: nginx
+  gather_facts: no
+  remote_user: ubuntu
+  become: true
+  
+  vars_files:
+    - my_vault.yml
+
+  vars:
+    pubkey_path: /home/nginx/.ssh
+    client_pubkey: /home/User/.ssh/id_rsa.pub
+
+
+  tasks:
+
+    - name: Create group "nginx"
+      group:
+        name: nginx
+        state: present
+
+    - name: Create user "nginx"
+      user:
+        name: nginx
+        password: "{{ my_password | password_hash('sha512') }}"
+        groups:
+        - nginx
+        - sudo
+        state: present
+
+
+    - name: create .ssh directory on host
+      file:
+        path: "{{pubkey_path}}"
+        state: directory
+
+
+    - name: Set authorized key took from file
+      authorized_key:
+        user: nginx
+        state: present
+        key: "{{ lookup('file','{{ client_pubkey }}' ) }}"
+
