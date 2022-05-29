@@ -1,6 +1,6 @@
 - hosts: nginx
   gather_facts: no
-  remote_user: nginx
+  remote_user: ubuntu
   become: true
 
   vars:
@@ -11,13 +11,14 @@
   - APP_PRVKEY_FILE: /root/app_key.pem
   - APP_CSR_FILE: /root/app.csr
   - APP_CERT_FILE: /root/app.crt
-  - HOST_IP: "34.148.84.22"
+  - HOST_IP: "35.202.196.238"
   - DNS_NAME: mydom.in
-  - SUBJ_ALT: 'IP:34.148.84.22,DNS:mydom.in'
+  - SUBJ_ALT: 'IP:35.202.196.238,DNS:mydom.in'
   - NEXUS_URL: http://10.128.0.18:8081
+  - NEXUS_DOCKER: http://10.128.0.18:8082
+  - BECOME_USER: nginx
 
   tasks:
-
     - name: ensure nginx is at the latest version
       apt:
         name: nginx
@@ -28,7 +29,6 @@
       service:
         name: nginx
         state: started
-
 
     - name: create CA key
       openssl_privatekey:
@@ -73,17 +73,6 @@
         ownca_privatekey_path: "{{ ca_key.filename }}"
       register: example_com_crt
 
-
-    - name: Copy Configuration Snippet Pointing to the SSL Key and Certificate
-      template:
-        src: self-signed.conf.jinja2
-        dest: /etc/nginx/snippets/self-signed.conf
-
-
-    - name: Creating a Configuration Snippet with Strong Encryption Settings
-      template:
-        src: ssl-params.conf.jinja2
-        dest: /etc/nginx/snippets/ssl-params.conf
 
 
     - name: Creating a file with content
