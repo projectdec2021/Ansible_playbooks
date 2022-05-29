@@ -11,9 +11,9 @@
   - APP_PRVKEY_FILE: /root/app_key.pem
   - APP_CSR_FILE: /root/app.csr
   - APP_CERT_FILE: /root/app.crt
-  - HOST_IP: "35.202.196.238"
+  - HOST_IP: "34.67.194.116"
   - DNS_NAME: mydom.in
-  - SUBJ_ALT: 'IP:35.202.196.238,DNS:mydom.in'
+  - SUBJ_ALT: 'IP:34.67.194.116,DNS:mydom.in'
   - NEXUS_URL: http://10.128.0.18:8081
   - NEXUS_DOCKER: http://10.128.0.18:8082
   - BECOME_USER: nginx
